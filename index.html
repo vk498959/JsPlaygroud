@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VS Code Style JavaScript Playground</title>
+  
+  <!-- CodeMirror CSS -->
+  <link rel="stylesheet" href="./css1.css">
+  <link rel="stylesheet" href="./css2.css">
+  <link rel="stylesheet" href="./css3.css">
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 20px;
+      background: #1e1e1e;
+      color: #d4d4d4;
+    }
+    h2 { margin-bottom: 5px; color: #fff; }
+    p { color: #9cdcfe; font-size: 14px; margin-bottom: 15px; }
+    
+    .CodeMirror {
+      height: 220px;
+      border-radius: 6px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 14px;
+      border: 1px solid #444;
+    }
+
+    /* Makes the typing cursor (blink) thin and sleek */
+    .CodeMirror-cursor {
+      border-left: 2px solid #f8f8f2 !important;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px 22px;
+      background-color: #0e639c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #1177bb;
+    }
+    
+    .output-container {
+      margin-top: 20px;
+    }
+    h3 { color: #4ec9b0; margin-bottom: 8px; }
+    pre {
+      background: #111111;
+      color: #ce9178;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      font-family: 'Courier New', Courier, monospace;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>JavaScript Code Playground</h2>
+
+  <textarea id="codeBox"></textarea>
+  
+  <br>
+  <button id="runBtn">Run Code</button>
+
+  <div class="output-container">
+    <h3>Output Console:</h3>
+    <pre id="outputBox">Click "Run Code" to see output here...</pre>
+  </div>
+
+  <!-- CodeMirror Core and JS Mode -->
+  <script src="./js1.js"></script>
+  <script src="./js2.js"></script>
+  
+  <!-- CodeMirror Addons: Autocomplete & Auto-Close Brackets -->
+  <script src="./js3.js"></script>
+  <script src="./js4.js"></script>
+  <script src="./js5.js"></script>
+
+  <script>
+    const editor = CodeMirror.fromTextArea(document.getElementById('codeBox'), {
+      mode: "javascript",
+      theme: "dracula",
+      lineNumbers: true,
+      autoCloseBrackets: true, // Now fully active with the script included
+      matchBrackets: true,
+      indentUnit: 2,
+      extraKeys: {"Ctrl-Space": "autocomplete"}
+    });
+
+    // editor.setValue("let greeting = 'Hello!';\nconsole.log(greeting);");
+
+    // Trigger autocomplete popup as you type letters
+    editor.on("inputRead", function(cm, change) {
+      if (!cm.state.completionActive && /[a-zA-Z]/.test(change.text[0])) {
+        CodeMirror.commands.autocomplete(cm, null, { completeSingle: false });
+      }
+    });
+
+    // Run Code Logic
+    const runBtn = document.getElementById('runBtn');
+    const outputBox = document.getElementById('outputBox');
+
+    runBtn.addEventListener('click', function() {
+      const userCode = editor.getValue();
+      outputBox.textContent = '';
+      outputBox.style.color = '#ce9178';
+
+      let logs = [];
+      const originalConsoleLog = console.log;
+
+      console.log = function(...args) {
+        const formattedArgs = args.map(arg => 
+          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+        );
+        logs.push(formattedArgs.join(' '));
+        originalConsoleLog.apply(console, args);
+      };
+
+      try {
+        const result = new Function(userCode)();
+
+        if (result !== undefined) {
+          logs.push(`[Returned]: ${result}`);
+        }
+
+        if (logs.length === 0) {
+          outputBox.textContent = "Code executed successfully (no console output).";
+        } else {
+          outputBox.textContent = logs.join('\n');
+        }
+
+      } catch (error) {
+        outputBox.style.color = '#f44747';
+        outputBox.textContent = `Error: ${error.message}`;
+      } finally {
+        console.log = originalConsoleLog;
+      }
+    });
+  </script>
+
+</body>
+</html>
